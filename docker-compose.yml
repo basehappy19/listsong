@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+    listSong_db:
+        image: mysql:latest
+        container_name: listSong_db
+        environment:
+            MYSQL_ROOT_PASSWORD: rootpassword
+            MYSQL_DATABASE: listSong
+            MYSQL_USER: listSong
+            MYSQL_PASSWORD: listSong
+        ports:
+            - "3306:3306"
+        volumes:
+            - listSong_data:/var/lib/mysql
+
+volumes:
+    listSong_data:
