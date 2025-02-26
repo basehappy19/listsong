@@ -3,7 +3,14 @@ import SongListClient from './Client'
 import { getSongs } from '@/functions/Song';
 import { Category, Song } from '@/interface/Song';
 import { getCategories } from '@/functions/Category';
+import type { Metadata } from 'next';
 export const revalidate = 0
+
+
+export const metadata: Metadata = {
+    title: "ลิสต์เพลงเปิดหมวก",
+    description: "ลิสต์เพลงเปิดหมวก",
+};
 
 export default async function HomePage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     const searchParams = await props.searchParams

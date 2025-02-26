@@ -1,189 +1,29 @@
 'use client'
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, ArrowUp, ArrowDown, Edit2, Trash2, Link as LinkIcon, Music } from 'lucide-react';
+import { Plus, Grid, Grid2X2, Grid3X3 } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogClose,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { motion, AnimatePresence } from "framer-motion"
-import { useToast } from '@/hooks/use-toast';
 import { Category, Song } from '@/interface/Song';
 import { addSong, deleteSong, moveSong, updateSong } from '@/functions/Song';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'react-toastify';
+import { SongForm } from './SongForm';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SongCard } from '@/components/SongCard';
 
 type Direction = 'up' | 'down';
+type GridView = 1 | 2 | 3;
 
-interface SongItemProps {
-    song: Song;
-    index: number;
-    totalSongs: number;
-    onMove: (id: number, direction: Direction) => void;
-    onEdit: (song: Song) => void;
-    onDelete: (id: number) => void;
-}
 
-// Song Form Component
-const SongForm: React.FC<{
-    onSubmit: (e: FormEvent<HTMLFormElement>) => Promise<void>;
-    editingSong: Song | null;
-    categories: Category[];
-}> = ({ onSubmit, editingSong, categories }) => (
-    <form onSubmit={onSubmit} className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-                <Label htmlFor="title">ชื่อเพลง</Label>
-                <Input
-                    id="title"
-                    name="title"
-                    required
-                    defaultValue={editingSong?.title}
-                    placeholder="ใส่ชื่อเพลง"
-                    className="w-full"
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="artist">ศิลปิน</Label>
-                <Input
-                    id="artist"
-                    name="artist"
-                    required
-                    defaultValue={editingSong?.artist}
-                    placeholder="ใส่ชื่อศิลปิน"
-                    className="w-full"
-                />
-            </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-                <Label htmlFor="category">หมวดหมู่</Label>
-                <Select
-                    name="categoryId"
-                    defaultValue={editingSong?.category?.id.toString()}
-                >
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder="เลือกหมวดหมู่" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {categories.map((category) => (
-                            <SelectItem
-                                key={category.id} value={category.id.toString()}>
-                                {category.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="chordUrl">ลิงก์คอร์ด</Label>
-                <Input
-                    id="chordUrl"
-                    name="chordUrl"
-                    type="url"
-                    defaultValue={editingSong?.chordUrl}
-                    placeholder="https://..."
-                    className="w-full"
-                />
-            </div>
-        </div>
-        <div className="flex justify-end gap-2 pt-4">
-            <DialogClose asChild>
-                <Button type="button" variant="outline">
-                    ยกเลิก
-                </Button>
-            </DialogClose>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                {editingSong ? 'บันทึกการแก้ไข' : 'เพิ่มเพลง'}
-            </Button>
-        </div>
-    </form>
-);
 
-const SongItem: React.FC<SongItemProps> = ({
-    song,
-    index,
-    totalSongs,
-    onMove,
-    onEdit,
-    onDelete
-}) => (
-    <motion.div
-        key={song.id}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        className="group flex items-center gap-4 p-4 bg-card rounded-lg border hover:border-primary transition-all duration-200"
-    >
-        <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 rounded-full">
-            <Music className="w-6 h-6 text-primary" />
-        </div>
-
-        <div className="flex-grow min-w-0">
-            <div className="flex items-baseline gap-2">
-                <h3 className="font-medium truncate">{song.title}</h3>
-                {song.category && (
-                    <span className="hidden md:inline-block text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                        {song.category.name}
-                    </span>
-                )}
-            </div>
-            <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
-        </div>
-
-        <div className="flex items-center gap-1 md:gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onMove(song.id, 'up')}
-                disabled={index === 0}
-                className="hidden md:inline-flex"
-            >
-                <ArrowUp className="w-4 h-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onMove(song.id, 'down')}
-                disabled={index === totalSongs - 1}
-                className="hidden md:inline-flex"
-            >
-                <ArrowDown className="w-4 h-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.open(song.chordUrl, '_blank')}
-            >
-                <LinkIcon className="w-4 h-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(song)}
-            >
-                <Edit2 className="w-4 h-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive"
-                onClick={() => onDelete(song.id)}
-            >
-                <Trash2 className="w-4 h-4" />
-            </Button>
-        </div>
-    </motion.div>
-);
-
-// Main Component
 const SongListClient: React.FC<{
     songs: Song[],
     categories: Category[],
@@ -191,14 +31,26 @@ const SongListClient: React.FC<{
 }> = ({ songs, categories, categorySearch }) => {
     const [editingSong, setEditingSong] = useState<Song | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-    const { toast } = useToast();
+    const [gridView, setGridView] = useState<GridView>(3);
+    
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 768) {
+                setGridView(1);
+            } else {
+                setGridView(3);
+            }
+        };
+        
+        handleResize();
+        
+        window.addEventListener('resize', handleResize);
+        
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleMoveSong = async (id: number, direction: Direction) => {
         await moveSong(id, direction);
-        toast({
-            title: "ย้ายเพลงสำเร็จ",
-            description: "ลำดับเพลงถูกเปลี่ยนแปลงแล้ว",
-        });
     };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -207,45 +59,36 @@ const SongListClient: React.FC<{
 
         try {
             if (editingSong) {
-                const updatedSong = await updateSong(formData, editingSong.id);
-                toast({
-                    title: "แก้ไขเพลงสำเร็จ",
-                    description: `เพลง ${updatedSong.title} ถูกแก้ไขแล้ว`,
-                });
+                await updateSong(formData, editingSong.id);
+                toast.success(`แก้ไขเพลงสำเร็จ`, { position: `bottom-right` });
             } else {
-                const newSong = await addSong(formData)
-                toast({
-                    title: "เพิ่มเพลงสำเร็จ",
-                    description: `เพลง ${newSong.title} ถูกเพิ่มแล้ว`,
-                });
+                await addSong(formData)
+                toast.success(`เพิ่มเพลงสำเร็จ`, { position: `bottom-right` });
             }
             setIsDialogOpen(false);
             setEditingSong(null);
         } catch (error) {
             console.error(error);
-            toast({
-                title: "เกิดข้อผิดพลาด",
-                description: "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
-                variant: "destructive",
-            });
+            toast.error(`เกิดข้อผิดพลาด`, { position: `bottom-right` });
         }
     };
 
     const handleDelete = async (id: number) => {
         try {
-            const deletedSong = await deleteSong(id);
-            toast({
-                title: "ลบเพลงสำเร็จ",
-                description: `เพลง ${deletedSong.title} ถูกลบแล้ว`,
-                variant: "destructive",
-            });
+            await deleteSong(id);
+            toast.success(`ลบเพลงสำเร็จ`, { position: `bottom-right` });
         } catch (error) {
             console.error(error);
-            toast({
-                title: "เกิดข้อผิดพลาด",
-                description: "ไม่สามารถลบเพลงได้ กรุณาลองใหม่อีกครั้ง",
-                variant: "destructive",
-            });
+            toast.error(`เกิดข้อผิดพลาด ลบเพลงไม่ได้`);
+        }
+    };
+
+    const getGridClass = () => {
+        switch (gridView) {
+            case 1: return "grid-cols-1";
+            case 2: return "grid-cols-1 md:grid-cols-2";
+            case 3: return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
+            default: return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
         }
     };
 
@@ -255,28 +98,87 @@ const SongListClient: React.FC<{
                 <CardHeader>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <CardTitle className="text-2xl">รายการเพลง</CardTitle>
-                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button
-                                    className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
-                                    onClick={() => setEditingSong(null)}
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    เพิ่มเพลง
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px]">
-                                <DialogHeader>
-                                    <DialogTitle>{editingSong ? 'แก้ไขเพลง' : 'เพิ่มเพลง'}</DialogTitle>
-                                </DialogHeader>
-                                <SongForm
-                                    onSubmit={handleSubmit}
-                                    editingSong={editingSong}
-                                    categories={categories}
-                                />
-                            </DialogContent>
-                        </Dialog>
+                        <div className="md:flex flex-col sm:flex-row gap-4 w-full hidden md:w-auto">
+                            <div className="flex items-center gap-2 bg-secondary/20 rounded-lg p-1">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button 
+                                                variant={gridView === 1 ? "default" : "ghost"} 
+                                                size="icon" 
+                                                className={`${gridView === 1 ? 'bg-blue-500' : 'bg-blue-400'} font-medium h-8 w-8  hover:bg-blue-500`}
+                                                onClick={() => setGridView(1)}
+                                            >
+                                                1
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>1 คอลัมน์</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button 
+                                                variant={gridView === 2 ? "default" : "ghost"} 
+                                                size="icon" 
+                                                className={`${gridView === 2 ? 'bg-blue-500' : 'bg-blue-400'} font-medium h-8 w-8 bg-blue-400 hover:bg-blue-500`}
+                                                onClick={() => setGridView(2)}
+                                            >
+                                                2
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>2 คอลัมน์</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button 
+                                                variant={gridView === 3 ? "default" : "ghost"} 
+                                                size="icon" 
+                                                className={`${gridView === 3 ? 'bg-blue-500' : 'bg-blue-400'} font-medium h-8 w-8 bg-blue-400 hover:bg-blue-500`}
+                                                onClick={() => setGridView(3)}
+                                            >
+                                                3
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>3 คอลัมน์</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                            
+                            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                                        onClick={() => setEditingSong(null)}
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        เพิ่มเพลง
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[600px]">
+                                    <DialogHeader>
+                                        <DialogTitle>{editingSong ? 'แก้ไขเพลง' : 'เพิ่มเพลง'}</DialogTitle>
+                                    </DialogHeader>
+                                    <SongForm
+                                        onSubmit={handleSubmit}
+                                        editingSong={editingSong}
+                                        categories={categories}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     </div>
+                    
                     <motion.div
                         className="flex flex-wrap gap-2 mt-4"
                         initial={{ opacity: 0, y: -20 }}
@@ -285,7 +187,7 @@ const SongListClient: React.FC<{
                         <Link href="/">
                             <Button
                                 variant={!categorySearch ? 'default' : 'outline'}
-                                className="w-full md:w-auto"
+                                className={`${!categorySearch ? 'bg-blue-500' : 'bg-blue-400'} hover:bg-blue-500 w-full md:w-auto`}
                             >
                                 ทั้งหมด
                             </Button>
@@ -294,7 +196,7 @@ const SongListClient: React.FC<{
                             <Link key={category.id} href={`?category=${category.id}`}>
                                 <Button
                                     variant={categorySearch === category.id ? 'default' : 'outline'}
-                                    className="w-full md:w-auto"
+                                    className={`${categorySearch === category.id ? 'bg-blue-500' : 'bg-blue-400'} font-medium hover:bg-blue-500 w-full md:w-auto`}
                                 >
                                     {category.name}
                                 </Button>
@@ -304,9 +206,9 @@ const SongListClient: React.FC<{
                 </CardHeader>
                 <CardContent>
                     <AnimatePresence mode="popLayout">
-                        <div className="space-y-3">
+                        <div className={`grid ${getGridClass()} gap-6`}>
                             {songs.map((song, index) => (
-                                <SongItem
+                                <SongCard
                                     key={song.id}
                                     song={song}
                                     index={index}
@@ -317,6 +219,7 @@ const SongListClient: React.FC<{
                                         setIsDialogOpen(true);
                                     }}
                                     onDelete={handleDelete}
+                                    gridView={gridView}
                                 />
                             ))}
                         </div>
