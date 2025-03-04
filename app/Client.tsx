@@ -98,8 +98,8 @@ const SongListClient: React.FC<{
                 <CardHeader>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <CardTitle className="text-2xl">รายการเพลง</CardTitle>
-                        <div className="md:flex flex-col sm:flex-row gap-4 w-full hidden md:w-auto">
-                            <div className="flex items-center gap-2 bg-secondary/20 rounded-lg p-1">
+                        <div className="md:flex flex-col sm:flex-row gap-4 w-full">
+                            <div className="hidden md:flex items-center gap-2 bg-secondary/20 rounded-lg p-1">
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
