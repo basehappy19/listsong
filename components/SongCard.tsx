@@ -3,7 +3,6 @@ import { motion } from "framer-motion"
 import { ChevronDown, ChevronUp, Edit, ExternalLink, Music, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-type GridView = 1 | 2 | 3;
 
 type Direction = 'up' | 'down';
 
@@ -14,8 +13,7 @@ export const SongCard: React.FC<{
     onMove: (id: number, direction: Direction) => void;
     onEdit: (song: Song) => void;
     onDelete: (id: number) => void;
-    gridView: GridView;
-}> = ({ song, index, totalSongs, onMove, onEdit, onDelete, gridView }) => {
+}> = ({ song, index, totalSongs, onMove, onEdit, onDelete }) => {
     return (
         <motion.div
             key={song.id}

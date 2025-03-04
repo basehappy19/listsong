@@ -3,7 +3,7 @@ import React, { useState, FormEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Grid, Grid2X2, Grid3X3 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -219,7 +219,6 @@ const SongListClient: React.FC<{
                                         setIsDialogOpen(true);
                                     }}
                                     onDelete={handleDelete}
-                                    gridView={gridView}
                                 />
                             ))}
                         </div>
